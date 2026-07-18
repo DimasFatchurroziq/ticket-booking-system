@@ -1,0 +1,28 @@
+# Kredensial & Konfigurasi Rahasia
+.env
+*.env
+
+# Binary hasil compile Go
+/dist/
+/bin/
+ticket-booking-system
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Dependency (Opsional, karena Go mengaturnya lewat go.mod)
+vendor/
+
+# File Log
+*.log
+
+# IDE / Editor
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
