@@ -1,0 +1,32 @@
+# 1. Penanganan Teks Otomatis
+# Git akan mendeteksi file teks secara otomatis. 
+# Saat commit, file teks diubah ke LF. Saat checkout di Windows, diubah ke CRLF.
+* text=auto
+
+# 2. Aturan Khusus Ekosistem Go (Wajib LF)
+# Agar go fmt dan modul Go konsisten, serta tidak bermasalah di Docker
+*.go text eol=lf
+go.mod text eol=lf
+go.sum text eol=lf
+
+# 3. Aturan Khusus Docker & Script Shell (Sangat Wajib LF)
+# File-file ini akan dieksekusi di dalam container Linux. 
+# Jika menggunakan CRLF, Docker/Linux akan error.
+Dockerfile text eol=lf
+docker-compose.yml text eol=lf
+*.sh text eol=lf
+.dockerignore text eol=lf
+.env* text eol=lf
+
+# 4. File Konfigurasi Lainnya (Opsional tapi disarankan LF)
+*.json text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.md text eol=lf
+
+# 5. File Biner (Jangan disentuh/diubah oleh Git)
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
