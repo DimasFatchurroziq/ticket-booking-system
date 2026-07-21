@@ -1,0 +1,64 @@
+# 1. Mengabaikan file Environment & Rahasia (SANGAT PENTING untuk Keamanan)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.pub
+
+# 2. Mengabaikan Binary Hasil Build Lokal (Agar tidak konflik dengan OS Docker)
+# Jika kamu pernah run 'go build' di Windows/Mac, binary ini tidak boleh masuk ke Docker Linux
+bin/
+dist/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+# Jika nama binary project kamu spesifik, misal: 'ticket-app', tambahkan di bawah:
+# ticket-app
+
+# 3. Mengabaikan Tooling Go & Cache internal
+.go/
+vendor/
+pgdata/
+
+# 4. Mengabaikan Git & File Konfigurasi Version Control
+.git
+.gitignore
+.gitattributes
+.github/
+.gitlab/
+
+# 5. Mengabaikan Docker Files (Docker tidak perlu menyalin dirinya sendiri)
+Dockerfile
+Dockerfile.*
+docker-compose.yml
+docker-compose.*
+
+# 6. Mengabaikan Dokumentasi, Design, & Catatan Editor
+README.md
+LICENSE
+docs/
+architecture/
+*.png
+*.jpg
+*.jpeg
+*.svg
+
+# 7. Mengabaikan File Konfigurasi IDE / Code Editor
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+*~
+.DS_Store
+
+# 8. Mengabaikan File Log & Testing / Coverage
+*.log
+logs/
+coverage.out
+*.test
