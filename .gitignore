@@ -1,6 +1,8 @@
 # Kredensial & Konfigurasi Rahasia
 .env
 *.env
+.env.dev
+.env.prod
 
 # Binary hasil compile Go
 /dist/
@@ -25,4 +27,5 @@ vendor/
 *.ntvs*
 *.njsproj
 *.sln
-*.swp
+*.swp.env.dev
+

@@ -1,0 +1,57 @@
+# EditorConfig membantu menjaga konsistensi style antar IDE/editor
+# https://editorconfig.org
+
+root = true
+
+
+# Default semua file
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+
+# Go source code
+[*.go]
+indent_style = tab
+indent_size = 4
+
+
+# Go module
+[go.mod]
+indent_style = tab
+indent_size = 4
+
+
+# YAML (Docker Compose, CI/CD)
+[*.yml]
+indent_style = space
+indent_size = 2
+
+[*.yaml]
+indent_style = space
+indent_size = 2
+
+
+# JSON
+[*.json]
+indent_style = space
+indent_size = 2
+
+
+# Shell script
+[*.sh]
+end_of_line = lf
+indent_style = space
+indent_size = 2
+
+
+# Markdown
+[*.md]
+trim_trailing_whitespace = false
+
+
+# Docker
+[Dockerfile]
+end_of_line = lf
