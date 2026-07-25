@@ -2,98 +2,88 @@ package main
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
-	"github.com/gofiber/fiber/v3"
+	"go.uber.org/zap"
 
-	"github.com/DimasFatchurroziq/ticket-booking-system/pkg/logger"
-	"github.com/DimasFatchurroziq/ticket-booking-system/pkg/validator"
 	"github.com/DimasFatchurroziq/ticket-booking-system/platform/config"
-	"github.com/DimasFatchurroziq/ticket-booking-system/platform/database"
-	"github.com/DimasFatchurroziq/ticket-booking-system/platform/messaging"
-
-	// Import domain layer (Ganti nama module sesuai go.mod Anda)
-	bookingHandler "github.com/DimasFatchurroziq/ticket-booking-system/internal/booking/handler"
-	bookingRepo "github.com/DimasFatchurroziq/ticket-booking-system/internal/booking/repository"
-	bookingService "github.com/DimasFatchurroziq/ticket-booking-system/internal/booking/service"
-
-	eventHandler "github.com/DimasFatchurroziq/ticket-booking-system/internal/event/handler"
-	eventRepo "github.com/DimasFatchurroziq/ticket-booking-system/internal/event/repository"
-	eventService "github.com/DimasFatchurroziq/ticket-booking-system/internal/event/service"
 )
 
 func main() {
-	// 1. GLOBAL INITIALIZATION & CONFIG
-	cfg := config.LoadConfig()
+	// 1. Inisialisasi Configuration & Core Logging
+	viperConfig := config.NewViper()
+	log := config.NewLogger(viperConfig)
+	defer log.Sync() // Memastikan sisa buffer log terkirim saat aplikasi exit
 
-	// Skala industri menggunakan structured logger (misal: Zap/Logrus) daripkg/
-	appLogger := logger.NewLogger(cfg.AppEnv)
+	log.Info("Starting application setup...")
 
-	// 2. PLATFORM INFRASTRUCTURE INITIALIZATION
-	db, err := database.ConnectPostgres(cfg.DatabaseURL)
-	if err != nil {
-		appLogger.Fatal("Failed to connect to PostgreSQL: ", err)
-	}
-	defer db.Close()
+	// 2. Inisialisasi Infrastructure & Resource Connection
+	db := config.NewDatabase(viperConfig, log)
+	redisClient := config.NewRedisClient(viperConfig, log)
+	producer := config.NewKafkaProducer(viperConfig, log)
 
-	redisClient, err := database.ConnectRedis(cfg.RedisURL)
-	if err != nil {
-		appLogger.Fatal("Failed to connect to Redis: ", err)
-	}
-	defer redisClient.Close()
+	validate := config.NewValidator(viperConfig)
+	app := config.NewFiber(viperConfig)
 
-	kafkaProducer, err := messaging.NewKafkaProducer(cfg.KafkaBrokers)
-	if err != nil {
-		appLogger.Fatal("Failed to init Kafka Producer: ", err)
-	}
-	defer kafkaProducer.Close()
-
-	// 3. FIBER APP INITIALIZATION
-	app := fiber.New(fiber.Config{
-		AppName:      cfg.AppName,
-		ReadTimeout:  15 * time.Second,
-		WriteTimeout: 15 * time.Second,
-		// Menghubungkan custom global validator Anda dari pkg/
-		StructValidator: validator.NewStructValidator(),
+	// 3. Wiring Dependency Injection & Routing melalui Bootstrap
+	config.Bootstrap(&config.BootstrapConfig{
+		DB:          db,
+		App:         app,
+		Log:         log,
+		Validate:    validate,
+		Config:      viperConfig,
+		Producer:    producer,
+		RedisClient: redisClient,
 	})
 
-	// 4. DEPENDENCY INJECTION & ROUTE REGISTRATION PER DOMAIN
+	// 4. Running Fiber Server secara Asynchronous
+	webPort := viperConfig.GetInt("WEB_PORT")
+	if webPort == 0 {
+		webPort = 8080 // Fallback default port jika key env kosong
+	}
 
-	// --- Domain: Event ---
-	evRepo := eventRepo.NewPostgresEventRepository(db)
-	evService := eventService.NewEventService(evRepo, redisClient)
-	eventHandler.RegisterRoutes(app, evService)
-
-	// --- Domain: Booking ---
-	bkRepo := bookingRepo.NewPostgresBookingRepository(db)
-	bkService := bookingService.NewBookingService(bkRepo, evService, kafkaProducer)
-	bookingHandler.RegisterRoutes(app, bkService)
-
-	// 5. START SERVER (ASYNC)
 	go func() {
-		appLogger.Infof("Server %s is running on port %s", cfg.AppName, cfg.AppPort)
-		if err := app.Listen(":" + cfg.AppPort); err != nil {
-			appLogger.Fatalf("Server dynamic crash: %v", err)
+		log.Info("HTTP Server is listening 🚀", zap.Int("port", webPort))
+		if err := app.Listen(fmt.Sprintf(":%d", webPort)); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Error("Fiber server crashed unexpectedly", zap.Error(err))
 		}
 	}()
 
-	// 6. OS GRACEFUL SHUTDOWN INTERCEPTOR
+	// 5. Graceful Shutdown Interceptor
 	stopSignal := make(chan os.Signal, 1)
 	signal.Notify(stopSignal, os.Interrupt, syscall.SIGTERM)
-	<-stopSignal
+	<-stopSignal // Menunggu sinyal OS masuk
 
-	appLogger.Info("Shutdown signal received. Gracefully closing Fiber...")
+	log.Info("Shutdown signal received. Starting graceful shutdown...")
 
-	// Memberikan toleransi 10 detik agar proses transaksi tiket yang krusial selesai
+	// Langkah A: Hentikan penerimaan HTTP Request baru & selesaikan request aktif
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	if err := app.ShutdownWithContext(ctx); err != nil {
-		appLogger.Fatalf("Fiber forced to shutdown: %v", err)
+		log.Error("Fiber forced to shutdown with error", zap.Error(err))
+	} else {
+		log.Info("Fiber server stopped gracefully")
 	}
 
-	appLogger.Info("Server clean exit. Goodbye.")
+	// Langkah B: Tutup semua resource/koneksi infrastruktur SETELAH Fiber benar-benar berhenti
+	log.Info("Closing background infrastructure connections...")
+
+	if err := producer.Close(); err != nil {
+		log.Error("Failed to close Kafka producer gracefully", zap.Error(err))
+	}
+
+	if err := redisClient.Close(); err != nil {
+		log.Error("Failed to close Redis client gracefully", zap.Error(err))
+	}
+
+	db.Close() // Menutup connection pool Postgres
+
+	log.Info("Server clean exit. Goodbye! 👋")
 }
