@@ -1,0 +1,9 @@
+version: "2"
+
+# Base configuration reference
+# Generate per domain:
+#
+# sqlc generate -f sqlc/user.yaml
+# sqlc generate -f sqlc/seat.yaml
+# sqlc generate -f sqlc/booking.yaml
+# sqlc generate -f sqlc/payment.yaml
