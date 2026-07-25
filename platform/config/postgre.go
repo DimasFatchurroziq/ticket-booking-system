@@ -17,19 +17,19 @@ func NewDatabase(viper *viper.Viper, log *zap.Logger) *pgxpool.Pool {
 	host := viper.GetString("POSTGRES_HOST")
 	port := viper.GetInt("POSTGRES_PORT")
 	database := viper.GetString("POSTGRES_DB")
-	fmt.Println(password)
+	// fmt.Println(password)
 
 	idleConnection := viper.GetInt("POSTGRES_POOL_MIN")
 	maxConnection := viper.GetInt("POSTGRES_POOL_MAX")
 	maxLifeTimeConnection := viper.GetInt("POSTGRES_POOL_LIFETIME")
 
-	log.Info("Checking DB config",
-		zap.String("user", username),
-		zap.String("host", host),
-		zap.Int("port", port),
-		zap.String("db", database),
-		zap.Bool("has_password", password != ""),
-	)
+	// log.Info("Checking DB config",
+	// 	zap.String("user", username),
+	// 	zap.String("host", host),
+	// 	zap.Int("port", port),
+	// 	zap.String("db", database),
+	// 	zap.Bool("has_password", password != ""),
+	// )
 
 	// Membentuk DSN secara aman menggunakan net/url
 	dbURL := &url.URL{
