@@ -49,7 +49,7 @@ func main() {
 	}
 
 	go func() {
-		log.Info("HTTP Server is listening 🚀", zap.Int("port", webPort))
+		log.Info("HTTP Server is listening", zap.Int("port", webPort))
 		if err := app.Listen(fmt.Sprintf(":%d", webPort)); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			log.Error("Fiber server crashed unexpectedly", zap.Error(err))
 		}
@@ -85,5 +85,5 @@ func main() {
 
 	db.Close() // Menutup connection pool Postgres
 
-	log.Info("Server clean exit. Goodbye! 👋")
+	log.Info("Server clean exit.")
 }
