@@ -8,7 +8,7 @@ sql:
       - "../migrations"
 
     queries:
-      - "../internal/seat/queries"
+      - "../internal/seat/repository/queries"
 
     gen:
       go:
