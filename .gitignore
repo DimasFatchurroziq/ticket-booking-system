@@ -29,3 +29,8 @@ vendor/
 *.sln
 *.swp.env.dev
 
+# Air live reload config & build artifacts
+.air.toml
+tmp/
+build-errors.log
+
