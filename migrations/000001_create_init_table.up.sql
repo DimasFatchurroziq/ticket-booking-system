@@ -6,7 +6,7 @@ CREATE TABLE users (
     email           VARCHAR(255) UNIQUE NOT NULL,
     password_hash   VARCHAR(255) NOT NULL,
     full_name       VARCHAR(255) NOT NULL,
-    phone_number    VARCHAR(20),
+    phone_number    VARCHAR(20) NOT NULL,
     created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at      TIMESTAMPTZ NOT NULL DEFAULT now()
 );
