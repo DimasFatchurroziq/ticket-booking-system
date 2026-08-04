@@ -7,18 +7,32 @@ import (
 )
 
 func NewLogger(viper *viper.Viper) *zap.Logger {
+
 	var cfg zap.Config
 
 	if viper.GetString("APP_ENV") == "development" {
-		cfg = zap.NewDevelopmentConfig() // Menggunakan preset Dev (Text/Console, Human-readable)
+		cfg = zap.NewDevelopmentConfig()
+
+		// Stacktrace hanya muncul pada ERROR ke atas
+		cfg.Development = false
+		cfg.Encoding = "console"
+
 	} else {
-		cfg = zap.NewProductionConfig() // Menggunakan preset Prod (JSON format)
+		cfg = zap.NewProductionConfig()
 	}
 
-	logLevel := zapcore.Level(viper.GetInt32("LOG_LEVEL"))
+	logLevel := zapcore.InfoLevel
+
+	if viper.IsSet("LOG_LEVEL") {
+		logLevel = zapcore.Level(viper.GetInt32("LOG_LEVEL"))
+	}
+
 	cfg.Level = zap.NewAtomicLevelAt(logLevel)
 
-	logger, err := cfg.Build()
+	logger, err := cfg.Build(
+		zap.AddStacktrace(zapcore.ErrorLevel),
+	)
+
 	if err != nil {
 		panic(err)
 	}

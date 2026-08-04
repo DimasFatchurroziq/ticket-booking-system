@@ -67,7 +67,7 @@ func NewDatabase(viper *viper.Viper, log *zap.Logger) *pgxpool.Pool {
 		log.Fatal("failed to ping postgresql database", zap.Error(err))
 	}
 
-	log.Info("Successfully connected to PostgreSQL via pgxpool 🚀")
+	log.Info("Successfully connected to PostgreSQL via pgxpool")
 
 	return dbpool
 }
