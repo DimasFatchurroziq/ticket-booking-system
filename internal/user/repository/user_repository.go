@@ -25,6 +25,7 @@ func NewPostgresUserRepository(conn db.DBTX, log *zap.Logger) domain.UserReposit
 func toDomainUser(u db.User) *domain.User {
 	return &domain.User{
 		ID:           u.ID,
+		Email:        u.Email,
 		PasswordHash: u.PasswordHash,
 		FullName:     u.FullName,
 		PhoneNumber:  u.PhoneNumber,
