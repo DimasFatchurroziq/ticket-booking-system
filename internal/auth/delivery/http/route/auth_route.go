@@ -16,6 +16,6 @@ func (c *RouteConfig) Setup() {
 
 func (rc *RouteConfig) SetupGuestRoute() {
 	api := rc.App.Group("/api/v1")
-	api.Get("/users/", rc.AuthHandler.Register)
-	api.Get("/users/", rc.AuthHandler.Login)
+	api.Post("/users/", rc.AuthHandler.Register)
+	api.Post("/users/", rc.AuthHandler.Login)
 }

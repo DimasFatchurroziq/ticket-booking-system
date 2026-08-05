@@ -93,9 +93,9 @@ func (h *AuthHandler) Login(c fiber.Ctx) error {
 	result, err := h.authUsecase.Login(c.Context(), cmd)
 	if err != nil {
 
-		if errors.Is(err, domain.ErrEmailExists) {
-			return c.Status(fiber.StatusConflict).JSON(fiber.Map{
-				"error": "email already exists",
+		if errors.Is(err, domain.ErrUserNotFound) || errors.Is(err, domain.ErrInvalidPassword) {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"error": "credential tidak valid",
 			})
 		}
 

@@ -128,7 +128,7 @@ func (u *authUsecase) Login(ctx context.Context, cmd LoginCommand) (*LoginResult
 			zap.Error(err),
 		)
 
-		return nil, err
+		return nil, domain.ErrUserNotFound
 	}
 
 	err = u.hasher.Compare(user.PasswordHash, cmd.Password)
@@ -141,7 +141,7 @@ func (u *authUsecase) Login(ctx context.Context, cmd LoginCommand) (*LoginResult
 			zap.Error(err),
 		)
 
-		return nil, err
+		return nil, domain.ErrInvalidPassword
 	}
 
 	signedToken, err := u.tokenManager.Generate(user.ID, user.Email)
