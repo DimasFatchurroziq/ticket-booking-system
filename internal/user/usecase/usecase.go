@@ -1,10 +1,25 @@
 package usecase
 
-import "context"
+import (
+	"context"
+
+	"github.com/google/uuid"
+)
 
 type UserUsecase interface {
-	Register(
+	Me(
 		ctx context.Context,
-		cmd RegisterCommand,
-	) (*RegisterResult, error)
+		cmd MeCommand,
+	) (*MeResult, error)
+}
+
+type MeCommand struct {
+	UserID uuid.UUID
+}
+
+type MeResult struct {
+	ID          uuid.UUID
+	Email       string
+	FullName    string
+	PhoneNumber string
 }

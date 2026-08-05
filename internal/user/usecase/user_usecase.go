@@ -3,98 +3,62 @@ package usecase
 import (
 	"context"
 
+	"github.com/DimasFatchurroziq/ticket-booking-system/internal/auth/crypto"
 	"github.com/DimasFatchurroziq/ticket-booking-system/internal/user/domain"
 	"go.uber.org/zap"
 )
 
 type userUsecase struct {
 	userRepo domain.UserRepository
-	Log      *zap.Logger
+	hasher   crypto.Hasher
+	log      *zap.Logger
 }
 
 func NewUserUsecase(
 	userRepo domain.UserRepository,
-	Log *zap.Logger,
+	hasher crypto.Hasher,
+	log *zap.Logger,
 ) UserUsecase {
 
 	return &userUsecase{
 		userRepo: userRepo,
-		Log:      Log,
+		hasher:   hasher,
+		log:      log,
 	}
 }
 
-func (u *userUsecase) Register(
+func (u *userUsecase) Me(
 	ctx context.Context,
-	cmd RegisterCommand,
-) (*RegisterResult, error) {
+	cmd MeCommand,
+) (*MeResult, error) {
 
-	u.Log.Info(
-		"user registration started",
-		zap.String("email", cmd.Email),
+	u.log.Info(
+		"user profile requested",
+		zap.String("user_id", cmd.UserID.String()),
 	)
 
-	user, err := domain.NewUser(
-		cmd.Email,
-		cmd.Password,
-		cmd.FullName,
-		cmd.PhoneNumber,
-	)
-
+	user, err := u.userRepo.GetByID(ctx, cmd.UserID)
 	if err != nil {
 
-		u.Log.Warn(
-			"failed creating user entity",
-			zap.String("email", cmd.Email),
-			zap.Error(err),
-		)
-
-		return nil, err
-	}
-
-	exists, err := u.userRepo.ExistsByEmail(ctx, user.Email)
-
-	if err != nil {
-
-		u.Log.Error(
+		u.log.Error(
 			"failed checking existing user",
-			zap.String("email", user.Email),
+			zap.String("user_id", cmd.UserID.String()),
 			zap.Error(err),
 		)
 
 		return nil, err
 	}
 
-	if exists {
-
-		u.Log.Warn(
-			"user registration rejected, email already exists",
-			zap.String("email", user.Email),
-		)
-
-		return nil, domain.ErrEmailExists
-	}
-
-	user, err = u.userRepo.Create(ctx, user)
-
-	if err != nil {
-
-		u.Log.Error(
-			"failed creating user",
-			zap.String("email", user.Email),
-			zap.Error(err),
-		)
-
-		return nil, err
-	}
-
-	u.Log.Info(
-		"user registration completed",
+	u.log.Info(
+		"user profile retrieved",
 		zap.String("user_id", user.ID.String()),
 		zap.String("email", user.Email),
 	)
 
-	return &RegisterResult{
-		ID:    user.ID,
-		Email: user.Email,
+	return &MeResult{
+		ID:          user.ID,
+		Email:       user.Email,
+		FullName:    user.FullName,
+		PhoneNumber: user.PhoneNumber,
 	}, nil
 }
