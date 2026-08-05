@@ -3,8 +3,8 @@ package http
 import (
 	"errors"
 
+	"github.com/DimasFatchurroziq/ticket-booking-system/internal/auth/token"
 	"github.com/DimasFatchurroziq/ticket-booking-system/internal/user/domain"
-	"github.com/DimasFatchurroziq/ticket-booking-system/internal/user/dto"
 	"github.com/DimasFatchurroziq/ticket-booking-system/internal/user/usecase"
 	"go.uber.org/zap"
 
@@ -27,34 +27,25 @@ func NewUserHandler(app *fiber.App, userUsecase usecase.UserUsecase, Log *zap.Lo
 	}
 }
 
-func (h *UserHandler) Register(c fiber.Ctx) error {
-	var req dto.RegisterRequest
+func (h *UserHandler) Me(c fiber.Ctx) error {
 
-	if err := c.Bind().Body(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "invalid request body",
+	claims, ok := c.Locals("user").(*token.Claims)
+
+	if !ok {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "unauthorized",
 		})
 	}
 
-	if err := h.validate.Struct(req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "validation failed",
-		})
+	cmd := usecase.MeCommand{
+		UserID: claims.UserID,
 	}
+	result, err := h.userUsecase.Me(c.Context(), cmd)
 
-	cmd := usecase.RegisterCommand{
-		Email:       req.Email,
-		Password:    req.Password,
-		FullName:    req.FullName,
-		PhoneNumber: req.PhoneNumber,
-	}
-
-	result, err := h.userUsecase.Register(c.Context(), cmd)
 	if err != nil {
-
-		if errors.Is(err, domain.ErrEmailExists) {
-			return c.Status(fiber.StatusConflict).JSON(fiber.Map{
-				"error": "email already exists",
+		if errors.Is(err, domain.ErrUserNotFound) {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"error": "credential tidak valid",
 			})
 		}
 
@@ -63,9 +54,5 @@ func (h *UserHandler) Register(c fiber.Ctx) error {
 		})
 	}
 
-	return c.Status(fiber.StatusCreated).JSON(dto.RegisterResponse{
-		ID:      result.ID,
-		Email:   result.Email,
-		Message: "registrasi berhasil",
-	})
+	return c.JSON(result)
 }
