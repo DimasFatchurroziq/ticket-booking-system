@@ -8,13 +8,13 @@ sql:
       - "../migrations"
 
     queries:
-      - "../internal/booking/repository/queries"
+      - "../internal/event/repository/queries"
 
     gen:
       go:
         package: "db"
 
-        out: "../internal/booking/repository/db"
+        out: "../internal/event/repository/db"
 
         sql_package: "pgx/v5"
 
